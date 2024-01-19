@@ -2,14 +2,18 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import datetime
 import json
+import pygame
 
 class TaskManager:
     def __init__(self, root):
+        pygame.init()
         self.root = root
         self.root.title("Task Manager")
         # Set a consistent width for buttons
         button_width = 15
         
+        
+
         self.file_path = "tasks.json"  # Define the file path
 
         self.load_tasks()
@@ -141,6 +145,10 @@ class TaskManager:
 
 
     def send_task_reminder(self, task):
+            # Play the alarm sound
+        sound_file = "alarm.mp3"  # Change this to your sound file
+        alarm_sound = pygame.mixer.Sound(sound_file)        
+        alarm_sound.play()
         reminder_message = f"Reminder: Task '{task}' is due now!"
         messagebox.showwarning("Task Reminder", reminder_message)
 
