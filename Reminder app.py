@@ -7,42 +7,65 @@ class TaskManager:
     def __init__(self, root):
         self.root = root
         self.root.title("Task Manager")
+        # Set a consistent width for buttons
+        button_width = 15
         
         self.file_path = "tasks.json"  # Define the file path
 
         self.load_tasks()
 
-                # Create and place widgets
+        # Create and place widgets
         self.label_task = ttk.Label(root, text="Task:")
-        self.label_task.grid(row=0, column=0, padx=10, pady=5, sticky=tk.W)
+        self.label_task.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
         self.task_entry = ttk.Entry(root, width=30)
-        self.task_entry.grid(row=0, column=1, padx=10, pady=5, sticky=tk.W)
+        self.task_entry.grid(row=0, column=1, padx=10, pady=10, sticky=tk.W)
 
         self.label_deadline = ttk.Label(root, text="Deadline (HH:MM):")
-        self.label_deadline.grid(row=1, column=0, padx=10, pady=5, sticky=tk.W)
+        self.label_deadline.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
 
         self.deadline_entry = ttk.Entry(root, width=30)
-        self.deadline_entry.grid(row=1, column=1, padx=10, pady=5, sticky=tk.W)
+        self.deadline_entry.grid(row=1, column=1, padx=10, pady=10, sticky=tk.W)
 
-        self.add_button = ttk.Button(root, text="Add Task", command=self.add_task)
-        self.add_button.grid(row=2, column=0, columnspan=2, pady=10)
+        self.add_button = ttk.Button(root, text="Add Task", command=self.add_task, width=button_width)
+        self.add_button.grid(row=2, column=0, columnspan=2, pady=15, padx=15, sticky=tk.W)
 
         self.task_tree = ttk.Treeview(root, columns=("Task", "Deadline", "Reminder Sent"), show="headings", selectmode=tk.BROWSE)
+
         self.task_tree.heading("Task", text="Task")
         self.task_tree.heading("Deadline", text="Deadline")
         self.task_tree.heading("Reminder Sent", text="Reminder Sent")
-        self.task_tree.grid(row=3, column=0, columnspan=3, padx=10, pady=5, sticky=tk.W+tk.E+tk.N+tk.S)
+        self.task_tree.grid(row=3, column=0, columnspan=3, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
+        self.task_tree.bind("<Button-1>", self.on_tree_click)
 
-        self.delete_button = ttk.Button(root, text="Delete Task", command=self.delete_task)
-        self.delete_button.grid(row=4, column=0, columnspan=2, pady=10)
 
-        self.remind_button = ttk.Button(root, text="Remind me at 5 PM", command=self.remind_tasks)
-        self.remind_button.grid(row=5, column=0, columnspan=2, pady=10)
 
-        # Schedule a call to check_tasks_reminders every 1000 milliseconds (1 second)
-        self.root.after(1000, self.check_tasks_reminders)
+        self.delete_button = ttk.Button(root, text="Delete Task", command=self.delete_task, width=button_width)
+        self.delete_button.grid(row=2, column=1, columnspan=2, pady=10, padx=10, sticky=tk.W)
 
+        # self.remind_button = ttk.Button(root, text="Remind me at 5 PM", command=self.remind_tasks, width=button_width)
+        # self.remind_button.grid(row=5, column=0, columnspan=2, pady=15)
+
+
+        # Add a vertical scrollbar to the Treeview
+        tree_scroll = ttk.Scrollbar(root, orient="vertical", command=self.task_tree.yview)
+        tree_scroll.grid(row=3, column=3, sticky=tk.N+tk.S)
+
+        # Configure Treeview to use the scrollbar
+        self.task_tree.configure(yscrollcommand=tree_scroll.set)
+
+        # Style the Treeview headers and rows
+        style = ttk.Style()
+        style.theme_use("alt")
+        style.configure("Treeview.Heading", font=('Helvetica', 10, 'bold'))
+        style.configure("Treeview", font=('Helvetica', 10))
+        style.configure("TLabel", font=('Helvetica', 12))
+        style.configure("TButton", background="#4CAF50", foreground="white")
+
+    def on_tree_click(self, event):
+        item = self.task_tree.selection()
+        if item:
+            self.task_tree.focus(item)
 
     def add_task(self):
         task_text = self.task_entry.get()
@@ -68,16 +91,19 @@ class TaskManager:
         else:
             messagebox.showwarning("Incomplete Task", "Please enter both a task and a deadline.")
 
+        
+
     def delete_task(self):
         selected_item = self.task_tree.selection()
         if selected_item:
             selected_task = self.task_tree.item(selected_item, "values")[0]
             del self.tasks[selected_task]
             self.save_tasks()
-            self.task_tree.delete(selected_item)
+            self.refresh_task_tree()  # Refresh the tree to reflect changes
             messagebox.showinfo("Task Deleted", f'Task "{selected_task}" deleted successfully!')
         else:
             messagebox.showwarning("No Task Selected", "Please select a task to delete.")
+
 
     def remind_tasks(self):
         current_time = datetime.datetime.now().time()
@@ -110,8 +136,8 @@ class TaskManager:
         # Refresh the task_tree to display all tasks
         self.refresh_task_tree()
 
-        # Schedule the next call to check_tasks_reminders after 1000 milliseconds (1 second)
-        self.root.after(1000, self.check_tasks_reminders)
+        # # Schedule the next call to check_tasks_reminders after 1000 milliseconds (1 second)
+        # self.root.after(1000, self.check_tasks_reminders)
 
 
     def send_task_reminder(self, task):
@@ -149,11 +175,20 @@ class TaskManager:
             reminder_sent = details["reminder_sent"]
 
             # Display a checkmark or cross in the "Reminder Sent" column
-            reminder_sent_str = "✔" if reminder_sent else "✘"
+            reminder_sent_str = "✔" if reminder_sent else ""
 
             self.task_tree.insert("", "end", values=(task, deadline_str, reminder_sent_str))
+
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = TaskManager(root)
+     # Apply a custom theme (azure) for a light appearance
+    root.tk.call("source", "azure.tcl")
+    root.tk.call("set_theme", "light")
+    def periodic_check():
+        app.check_tasks_reminders()
+        root.after(5000, periodic_check)
+
+    root.after(1000, periodic_check)
     root.mainloop()
